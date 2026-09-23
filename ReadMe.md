@@ -145,7 +145,6 @@ The frontend provides an interactive investigation graph that visualizes connect
 
 For example:
 
-```text
                     Cedar Bank
                         |
                         |
@@ -162,6 +161,7 @@ For example:
                   associated evidence
                    /             \
                 EV-001          EV-002
+
 
 The graph is generated from backend/database data rather than being hardcoded into the frontend.
 
@@ -249,77 +249,77 @@ Report functionality is connected to the investigation data rather than relying 
 The Command Center provides a high-level view of the investigation platform.
 
 It connects the major workflows:
-Cases
-   ↓
-Evidence
-   ↓
-Extraction
-   ↓
-Graph
-   ↓
-Analytics
-   ↓
-AI Assistant
-   ↓
-Investigations
-   ↓
-Reports
+                  Cases
+                  ↓
+                  Evidence
+                  ↓
+                  Extraction
+                  ↓
+                  Graph
+                  ↓
+                  Analytics
+                  ↓
+                  AI Assistant
+                  ↓
+                  Investigations
+                  ↓
+                  Reports
 
 System Architecture
-                                TRINETRA
-                                  |
-                    +-------------+-------------+
-                    |                           |
-                 Frontend                    Backend
-                 React/Vite                  FastAPI
-                    |                           |
-                    |                  +--------+--------+
-                    |                  |                 |
-                    |               SQLAlchemy        NLP/AI
-                    |                  |                 |
-                    |               SQLite          Entity/Relation
-                    |                                    Extraction
-                    |                                      |
-                    |                              +-------+-------+
-                    |                              |
-                    |                           Neo4j
-                    |                              |
-                    |                       Knowledge Graph
-                    |                              |
-                    |                    +---------+---------+
-                    |                    |                   |
-                    |                Analytics         Investigation
-                    |                    |                   |
-                    |                    +---------+---------+
-                    |                              |
-                    +-------------------------- Reports
+                                      TRINETRA
+                                        |
+                          +-------------+-------------+
+                          |                           |
+                       Frontend                    Backend
+                       React/Vite                  FastAPI
+                          |                           |
+                          |                  +--------+--------+
+                          |                  |                 |
+                          |               SQLAlchemy        NLP/AI
+                          |                  |                 |
+                          |               SQLite          Entity/Relation
+                          |                                    Extraction
+                          |                                      |
+                          |                              +-------+-------+
+                          |                              |
+                          |                           Neo4j
+                          |                              |
+                          |                       Knowledge Graph
+                          |                              |
+                          |                    +---------+---------+
+                          |                    |                   |
+                          |                Analytics         Investigation
+                          |                    |                   |
+                          |                    +---------+---------+
+                          |                              |
+                          +-------------------------- Reports
 
 Data Processing Pipeline
 
 TRINETRA processes investigative information through the following pipeline:
-1. Case Creation
-       ↓
-2. Evidence Ingestion
-       ↓
-3. Document Extraction / OCR
-       ↓
-4. NLP / Entity Extraction
-       ↓
-5. Relationship Extraction
-       ↓
-6. SQL Persistence
-       ↓
-7. Neo4j Graph Construction
-       ↓
-8. Graph Analytics
-       ↓
-9. Risk Analysis
-       ↓
-10. AI-Assisted Investigation
-       ↓
-11. Investigation Management
-       ↓
-12. Report Generation
+  1. Case Creation
+         ↓
+  2. Evidence Ingestion
+         ↓
+  3. Document Extraction / OCR
+         ↓
+  4. NLP / Entity Extraction
+         ↓
+  5. Relationship Extraction
+         ↓
+  6. SQL Persistence
+         ↓
+  7. Neo4j Graph Construction
+         ↓
+  8. Graph Analytics
+         ↓
+  9. Risk Analysis
+         ↓
+  10. AI-Assisted Investigation
+         ↓
+  11. Investigation Management
+         ↓
+  12. Report Generation
 
 Technology Stack
 Backend
@@ -343,35 +343,37 @@ SQLite
 Neo4j
 
 Project Structure:
-Trinetra_demo/
-│
-├── backend/
-│   ├── app/
-│   │   ├── ai/
-│   │   ├── analytics/
-│   │   ├── api/
-│   │   │   └── routes/
-│   │   ├── document/
-│   │   ├── graph/
-│   │   ├── nlp/
-│   │   ├── reports/
-│   │   └── main.py
-│   │
-│   ├── trinetra.db
-│   ├── .env
-│   └── .venv/
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── components/
-│   │   └── App.jsx
-│   ├── package.json
-│   └── vite.config.js
-│
-├── .gitignore
-└── README.mdFrontend Modules
+  Trinetra_demo/
+  │
+  ├── backend/
+  │   ├── app/
+  │   │   ├── ai/
+  │   │   ├── analytics/
+  │   │   ├── api/
+  │   │   │   └── routes/
+  │   │   ├── document/
+  │   │   ├── graph/
+  │   │   ├── nlp/
+  │   │   ├── reports/
+  │   │   └── main.py
+  │   │
+  │   ├── trinetra.db
+  │   ├── .env
+  │   └── .venv/
+  │
+  ├── frontend/
+  │   ├── src/
+  │   │   ├── pages/
+  │   │   ├── services/
+  │   │   ├── components/
+  │   │   └── App.jsx
+  │   ├── package.json
+  │   └── vite.config.js
+  │
+  ├── .gitignore
+  └── README.md
+  
+Frontend Modules
 
 The frontend currently contains the following major modules:
 
@@ -492,31 +494,31 @@ Example Investigation Flow
 
 A typical investigation can follow this workflow:
 
-Create Case
-    ↓
-Upload Evidence
-    ↓
-Extract Document Text
-    ↓
-Extract Entities
-    ↓
-Extract Relationships
-    ↓
-Store Structured Data
-    ↓
-Build Neo4j Graph
-    ↓
-Explore Connections
-    ↓
-Run Analytics
-    ↓
-Review Risk Indicators
-    ↓
-Ask AI Assistant
-    ↓
-Create Investigation
-    ↓
-Generate Report
+      Create Case
+        ↓
+    Upload Evidence
+        ↓
+    Extract Document Text
+        ↓
+    Extract Entities
+        ↓
+    Extract Relationships
+        ↓
+    Store Structured Data
+        ↓
+    Build Neo4j Graph
+        ↓
+    Explore Connections
+        ↓
+    Run Analytics
+        ↓
+    Review Risk Indicators
+        ↓
+    Ask AI Assistant
+        ↓
+    Create Investigation
+        ↓
+    Generate Report
 
 Design Principles
 TRINETRA follows several important architectural principles.
@@ -608,23 +610,23 @@ TRINETRA is not intended to compete directly with mature commercial investigatio
 
 Its primary contribution is the implementation of an integrated investigative intelligence architecture that connects:
 
-Evidence
-    +
-NLP
-    +
-SQL
-    +
-Neo4j
-    +
-Graph Analytics
-    +
-Risk Analysis
-    +
-AI Assistance
-    +
-Investigation Management
-    +
-Reporting
+    Evidence
+        +
+    NLP
+        +
+    SQL
+        +
+    Neo4j
+        +
+    Graph Analytics
+        +
+    Risk Analysis
+        +
+    AI Assistance
+        +
+    Investigation Management
+        +
+    Reporting
 
 This makes the project suitable as an academic demonstration of how modern AI, NLP, databases, knowledge graphs and investigative workflows can be combined into a single platform.
 
