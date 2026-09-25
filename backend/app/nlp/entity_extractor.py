@@ -1,4 +1,4 @@
-﻿"""
+"""
 TRINETRA Entity Extractor
 =========================
 
@@ -43,6 +43,8 @@ PHONE = "PHONE"
 EMAIL = "EMAIL"
 VEHICLE = "VEHICLE"
 CASE = "CASE"
+CASE_TITLE = "CASE_TITLE"
+DOCUMENT_TITLE = "DOCUMENT_TITLE"
 FIR = "FIR"
 EVIDENCE = "EVIDENCE"
 INMATE = "INMATE"
@@ -60,6 +62,8 @@ SUPPORTED_ENTITY_TYPES = {
     EMAIL,
     VEHICLE,
     CASE,
+    CASE_TITLE,
+    DOCUMENT_TITLE,
     FIR,
     EVIDENCE,
     INMATE,
@@ -74,9 +78,26 @@ SUPPORTED_ENTITY_TYPES = {
 # REGULAR EXPRESSIONS
 # ============================================================
 
+CASE_HEADER_PATTERN = re.compile(
+    r"\bCase\s*(?:Number|No|#)?\s*[:#-]\s*"
+    r"(?P<case_id>[A-Z0-9][A-Z0-9._/-]*)"
+    r"(?:\s*(?:[—–\-]|\:)\s*(?P<case_title>[^\r\n]+))?",
+    re.IGNORECASE,
+)
+
+EVIDENCE_HEADER_PATTERN = re.compile(
+    r"\b(?:Evidence|Exhibit)\s*(?:Number|No|#|ID)?\s*[:#-]\s*"
+    r"(?P<evidence_id>[A-Z0-9][A-Z0-9._/-]*)\b",
+    re.IGNORECASE,
+)
+
+COMPOUND_EVIDENCE_PATTERN = re.compile(
+    r"\b[A-Z0-9][A-Z0-9._/-]*[-_/]EV[-_/][0-9]+[A-Z0-9._/-]*\b",
+    re.IGNORECASE,
+)
+
 CASE_PATTERN = re.compile(
-    r"\b(?:CASE|CR|CC|SC|CASE[-_/]NO)"
-    r"[-_/: ]?[A-Z0-9][A-Z0-9._/-]*\b",
+    r"\b(?:CASE|CR|CC|SC|CASE[-_]NO)[-_/][A-Z0-9][A-Z0-9._/-]*\b",
     re.IGNORECASE,
 )
 
@@ -86,9 +107,8 @@ FIR_PATTERN = re.compile(
 )
 
 EVIDENCE_PATTERN = re.compile(
-    r"\b(?:EV|EVIDENCE|EXHIBIT)[-_/: ]?"
-    r"[A-Z0-9][A-Z0-9._/-]*\b",
-    re.IGNORECASE
+    r"\b(?:EV[-_/][0-9]+[A-Z0-9._/-]*|(?:EVIDENCE|EXHIBIT)[-_/][A-Z0-9][A-Z0-9._/-]*)\b",
+    re.IGNORECASE,
 )
 
 INMATE_PATTERN = re.compile(
@@ -308,6 +328,28 @@ class EntityExtractor:
         text = str(text)
 
         entities: list[EntityCandidate] = []
+
+        # ----------------------------------------------------
+        # Case headers and titles
+        # ----------------------------------------------------
+
+        entities.extend(
+            self._extract_case_headers(
+                text=text,
+                source_field=source_field,
+            )
+        )
+
+        # ----------------------------------------------------
+        # Evidence headers and compound identifiers
+        # ----------------------------------------------------
+
+        entities.extend(
+            self._extract_evidence_headers(
+                text=text,
+                source_field=source_field,
+            )
+        )
 
         # ----------------------------------------------------
         # Case
@@ -828,6 +870,138 @@ class EntityExtractor:
         return entities
 
     # ========================================================
+    # STRUCTURED CASE HEADER EXTRACTION
+    # ========================================================
+
+    def _extract_case_headers(
+        self,
+        text: str,
+        source_field: str | None,
+    ) -> list[EntityCandidate]:
+        """
+        Extract case identifiers and case titles from structured
+        case header lines, e.g.:
+            Case: TRI-TEST-001 — Harbor Procurement Review
+            Case Number: TRI-TEST-001
+            Case: CASE-001 - Narcotics Inquiry
+        """
+        if not text:
+            return []
+
+        entities: list[EntityCandidate] = []
+
+        for match in CASE_HEADER_PATTERN.finditer(text):
+            case_id = match.group("case_id").strip()
+            if case_id:
+                start_id = match.start("case_id")
+                end_id = match.end("case_id")
+                entities.append(
+                    EntityCandidate(
+                        entity_type=CASE,
+                        value=case_id,
+                        normalized_value=self._normalize_identifier(case_id),
+                        source_text=case_id,
+                        start=start_id,
+                        end=end_id,
+                        confidence=0.99,
+                        source_field=source_field,
+                        metadata={"method": "case_header_id"},
+                    )
+                )
+
+            case_title = match.group("case_title")
+            if case_title:
+                case_title = case_title.strip()
+                case_title = re.sub(r"[.!?]+$", "", case_title).strip()
+                if case_title:
+                    start_title = match.start("case_title")
+                    end_title = start_title + len(case_title)
+                    entities.append(
+                        EntityCandidate(
+                            entity_type=CASE_TITLE,
+                            value=case_title,
+                            normalized_value=case_title.strip().lower(),
+                            source_text=case_title,
+                            start=start_title,
+                            end=end_title,
+                            confidence=0.92,
+                            source_field=source_field,
+                            metadata={
+                                "method": "case_header_title",
+                                "case_id": case_id,
+                            },
+                        )
+                    )
+
+        return entities
+
+    # ========================================================
+    # STRUCTURED EVIDENCE HEADER EXTRACTION
+    # ========================================================
+
+    def _extract_evidence_headers(
+        self,
+        text: str,
+        source_field: str | None,
+    ) -> list[EntityCandidate]:
+        """
+        Extract structured evidence identifiers, e.g.:
+            Evidence Number: TRI-TEST-001-EV-001
+            Evidence ID: EV-001
+            Compound standalone: TRI-TEST-001-EV-001
+        """
+        if not text:
+            return []
+
+        entities: list[EntityCandidate] = []
+
+        for match in EVIDENCE_HEADER_PATTERN.finditer(text):
+            evidence_id = match.group("evidence_id").strip()
+            if not evidence_id or evidence_id.lower() in {
+                "type",
+                "record",
+                "description",
+                "details",
+                "synthetic",
+            }:
+                continue
+
+            entities.append(
+                EntityCandidate(
+                    entity_type=EVIDENCE,
+                    value=evidence_id,
+                    normalized_value=self._normalize_identifier(evidence_id),
+                    source_text=evidence_id,
+                    start=match.start("evidence_id"),
+                    end=match.end("evidence_id"),
+                    confidence=0.99,
+                    source_field=source_field,
+                    metadata={"method": "evidence_header_id"},
+                )
+            )
+
+        for match in COMPOUND_EVIDENCE_PATTERN.finditer(text):
+            val = match.group(0).strip()
+            if not val:
+                continue
+
+            entities.append(
+                EntityCandidate(
+                    entity_type=EVIDENCE,
+                    value=val,
+                    normalized_value=self._normalize_identifier(val),
+                    source_text=val,
+                    start=match.start(),
+                    end=match.end(),
+                    confidence=0.99,
+                    source_field=source_field,
+                    metadata={"method": "compound_evidence_id"},
+                )
+            )
+
+        return entities
+
+    # ========================================================
     # GPS EXTRACTION
     # ========================================================
 
@@ -917,7 +1091,9 @@ class EntityExtractor:
             r"(?:[A-Z][A-Za-z0-9&.-]*\s+){0,3}"
             r"(?:Pvt\.?\s+Ltd\.?|Private\s+Limited|"
             r"Ltd\.?|Limited|LLP|Inc\.?|Incorporated|"
-            r"Corporation|Corp\.?|Company|Co\.?)"
+            r"Corporation|Corp\.?|Company|Co\.?|"
+            r"Supplies|Advisory\s+Group|Consulting\s+Group|"
+            r"Solutions|Enterprises|Industries|Holdings)"
             r"\b"
         )
 
@@ -1102,6 +1278,13 @@ class EntityExtractor:
                 r")"
                 r"\b",
             ),
+            re.compile(
+                r"\b(?P<name>"
+                r"[A-Z][A-Za-z0-9&.-]*"
+                r"(?: [A-Z][A-Za-z0-9&.-]*){1,3}"
+                r")"
+                r"(?=\s+is a registered (?:procurement supplier|consulting organization|company|business|vendor|contractor)\b)",
+            ),
         )
 
         for sentence_match in re.finditer(
@@ -1210,6 +1393,19 @@ class EntityExtractor:
                 "co",
                 "co.",
                 "bank",
+                "group",
+                "supplies",
+                "solutions",
+                "services",
+                "enterprises",
+                "industries",
+                "holdings",
+                "advisory",
+                "consulting",
+                "associates",
+                "agency",
+                "bureau",
+                "department",
             )
 
             if any(
@@ -1230,10 +1426,10 @@ class EntityExtractor:
             }:
                 continue
 
-            # Avoid treating document/evidence headings as persons.
-            # These terms commonly occur in multi-token capitalized
-            # headings such as "Activity Record" or "Financial Activity".
+            # Avoid treating document/evidence headings, investigation
+            # descriptors, audit reviews, and corporate terms as persons.
             non_person_terms = {
+                # Document & Record terms
                 "activity",
                 "record",
                 "financial",
@@ -1247,6 +1443,55 @@ class EntityExtractor:
                 "reference",
                 "number",
                 "type",
+                "agreement",
+                "contract",
+                "license",
+                "certificate",
+                "memo",
+                "memorandum",
+                "notice",
+                "warrant",
+                "order",
+                "affidavit",
+                "petition",
+                "transcript",
+                "summary",
+                "overview",
+                # Investigation, Audit & Procedure terms
+                "review",
+                "procurement",
+                "consulting",
+                "advisory",
+                "audit",
+                "inquiry",
+                "investigation",
+                "assessment",
+                "operation",
+                "inspection",
+                "surveillance",
+                "intelligence",
+                "briefing",
+                "dossier",
+                "analysis",
+                "monitoring",
+                "compliance",
+                "enforcement",
+                # Organization / Entity terms
+                "supplies",
+                "solutions",
+                "services",
+                "enterprises",
+                "industries",
+                "holdings",
+                "agency",
+                "bureau",
+                "department",
+                "division",
+                "committee",
+                "board",
+                "group",
+                "associates",
+                "authority",
             }
 
             words = {
@@ -1333,6 +1578,13 @@ class EntityExtractor:
                 EntityExtractor
                 ._normalize_identifier(value)
             )
+
+        if entity_type in {
+            CASE_TITLE,
+            DOCUMENT_TITLE,
+        }:
+
+            return value.strip().lower()
 
         if entity_type == PERSON:
 
