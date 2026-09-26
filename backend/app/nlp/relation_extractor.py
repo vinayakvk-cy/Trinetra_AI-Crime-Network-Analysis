@@ -25,6 +25,7 @@ KNOWS = "KNOWS"
 WORKS_FOR = "WORKS_FOR"
 CONTACTED = "CONTACTED"
 TRANSFERRED_TO = "TRANSFERRED_TO"
+ACCOMPLICE_OF = "ACCOMPLICE_OF"
 
 PERSON_IN_CASE = "PERSON_IN_CASE"
 PERSON_IN_FIR = "PERSON_IN_FIR"
@@ -62,6 +63,7 @@ SUPPORTED_RELATION_TYPES = {
     WORKS_FOR,
     CONTACTED,
     TRANSFERRED_TO,
+    ACCOMPLICE_OF,
 
     PERSON_IN_CASE,
     PERSON_IN_FIR,
@@ -186,6 +188,33 @@ TRANSFERRED_TO_CUES = (
     "transfer to",
     "sent funds to",
     "transferred funds to",
+)
+
+ACCOMPLICE_CUES = (
+    "accomplice",
+    "accomplice of",
+    "accomplice in",
+    "accomplice in the case",
+    "accomplice in the incident",
+    "accomplice in the crime",
+    "co-conspirator of",
+    "co-conspirator in",
+    "co-conspirator in the case",
+    "co-conspirator in the incident",
+    "co-conspirator in the crime",
+    "co-accused in",
+    "partner in crime",
+    "collaborator in",
+    "collaborator in the case",
+    "collaborator in the incident",
+    "collaborator in the crime",
+    "conspiracy with",
+    "conspired with",
+    "conspired in",
+    "abetting the crime",
+    "abetting the incident",
+    "abetting the case",
+    "aiding and abetting",
 )
 
 CASE_CUES = (
@@ -955,6 +984,36 @@ class RelationExtractor:
                         )
 
                 continue
+
+            # ------------------------------------------------
+            # ACCOMPLICE_OF (Criminal Network Association)
+            # ------------------------------------------------
+
+            if self._contains_any(
+                sentence_lower,
+                ACCOMPLICE_CUES,
+            ):
+                for source, target in (
+                    self._pairs(
+                        sentence_entities
+                    )
+                ):
+                    if (
+                        source.entity_type == "PERSON"
+                        and target.entity_type == "PERSON"
+                    ):
+                        relations.append(
+                            self._relation(
+                                ACCOMPLICE_OF,
+                                source,
+                                target,
+                                0.92,
+                                sentence,
+                            )
+                        )
+
+                continue
+
 
             # ------------------------------------------------
             # WORKS_FOR
