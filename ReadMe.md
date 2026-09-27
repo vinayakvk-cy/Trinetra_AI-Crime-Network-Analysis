@@ -90,6 +90,7 @@ Examples include:
 - `CONTACTED`
 - `TRANSFERRED_TO`
 - `ASSOCIATED_WITH`
+- `ACCOMPLICE_OF` (Criminal co-conspirators & syndicate accomplices)
 - `PERSON_USED_PHONE`
 - `PERSON_USED_DEVICE`
 - `PERSON_OWNS_VEHICLE`
