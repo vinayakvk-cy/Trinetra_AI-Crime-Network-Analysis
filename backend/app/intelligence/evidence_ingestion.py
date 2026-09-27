@@ -1132,6 +1132,8 @@ class EvidenceIngestionService:
                 EntityRelationshipType.LINKED_TO,
             "related_to":
                 EntityRelationshipType.RELATED_TO,
+            "accomplice_of":
+                EntityRelationshipType.ACCOMPLICE_OF,
         }
 
         return aliases.get(

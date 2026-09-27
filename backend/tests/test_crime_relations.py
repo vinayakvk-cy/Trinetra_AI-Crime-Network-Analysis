@@ -61,3 +61,18 @@ def test_co_conspirator_relation():
         "Suresh Raina",
         "Dinesh Karthik",
     ) in relation_tuples(relations)
+
+
+def test_accomplice_of_model_and_ingestion_type():
+    from app.models.entity_relationship import EntityRelationshipType
+    from app.intelligence.evidence_ingestion import EvidenceIngestionService
+
+    assert EntityRelationshipType.ACCOMPLICE_OF == "accomplice_of"
+    assert (
+        EvidenceIngestionService._relationship_type("ACCOMPLICE_OF")
+        == EntityRelationshipType.ACCOMPLICE_OF
+    )
+    assert (
+        EvidenceIngestionService._relationship_type("accomplice_of")
+        == EntityRelationshipType.ACCOMPLICE_OF
+    )

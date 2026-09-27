@@ -60,6 +60,8 @@ class EntityRelationshipType(str, Enum):
 
     RELATED_TO = "related_to"
 
+    ACCOMPLICE_OF = "accomplice_of"
+
     OTHER = "other"
 
 
