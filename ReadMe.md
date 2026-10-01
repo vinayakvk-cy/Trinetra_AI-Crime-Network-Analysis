@@ -68,7 +68,8 @@ Examples include:
 - Organizations
 - Banks
 - Locations
-- Vehicles
+- Vehicles(India RTO Format)
+-Penal Sections(IPC,BNS,NDPS,IT)
 - Phones
 - Devices
 - Cases
