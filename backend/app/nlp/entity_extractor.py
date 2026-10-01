@@ -52,6 +52,8 @@ DEVICE = "DEVICE"
 DATE = "DATE"
 TIME = "TIME"
 GPS_COORDINATE = "GPS_COORDINATE"
+PENAL_SECTION = "PENAL_SECTION"
+
 
 
 SUPPORTED_ENTITY_TYPES = {
@@ -71,6 +73,8 @@ SUPPORTED_ENTITY_TYPES = {
     DATE,
     TIME,
     GPS_COORDINATE,
+    PENAL_SECTION,
+
 }
 
 
@@ -167,6 +171,16 @@ GPS_PATTERN = re.compile(
     r"(-?\d{1,3}(?:\.\d+)?)"
     r"\b"
 )
+
+PENAL_SECTION_PATTERN = re.compile(
+    r"\b(?:"
+    r"(?:IPC|BNS|CrPC|NDPS|IT\s+Act)\s*(?:Section|Sec|u/s)?\s*[0-9]{1,4}[A-Za-z]?"
+    r"|"
+    r"(?:Section|Sec|u/s)\s*[0-9]{1,4}[A-Za-z]?\s*(?:IPC|BNS|CrPC|NDPS|IT\s+Act)"
+    r")\b",
+    re.IGNORECASE,
+)
+
 
 
 # ============================================================
@@ -364,6 +378,21 @@ class EntityExtractor:
                 confidence=0.99,
             )
         )
+
+        # ----------------------------------------------------
+        # Penal / Legal Section
+        # ----------------------------------------------------
+
+        entities.extend(
+            self._extract_pattern(
+                text=text,
+                pattern=PENAL_SECTION_PATTERN,
+                entity_type=PENAL_SECTION,
+                source_field=source_field,
+                confidence=0.98,
+            )
+        )
+
 
         # ----------------------------------------------------
         # FIR
