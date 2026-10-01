@@ -10,6 +10,8 @@ from app.nlp.entity_extractor import (
     PHONE,
     FIR,
     CASE,
+    PENAL_SECTION,
+    VEHICLE,
 )
 
 
@@ -49,3 +51,24 @@ def test_extract_case_and_fir():
 
     assert any("CASE-2024-009" in c for c in cases)
     assert any("402" in f for f in firs)
+
+def test_extract_penal_sections():
+    extractor = EntityExtractor()
+    text = "Suspect was charged under IPC 420, Section 120B IPC and BNS Section 316."
+    result = extractor.extract(text)
+
+    sections = get_entities_by_type(result.entities, PENAL_SECTION)
+    assert any("420" in s for s in sections)
+    assert any("120B" in s or "120b" in s.lower() for s in sections)
+    assert any("316" in s for s in sections)
+
+
+def test_extract_vehicle_registration():
+    extractor = EntityExtractor()
+    text = "Getaway car with plate DL 01 AB 1234 was seen near truck MH-12-CD-5678."
+    result = extractor.extract(text)
+
+    vehicles = get_entities_by_type(result.entities, VEHICLE)
+    assert any("DL 01 AB 1234" in v for v in vehicles)
+    assert any("MH-12-CD-5678" in v for v in vehicles)
+
