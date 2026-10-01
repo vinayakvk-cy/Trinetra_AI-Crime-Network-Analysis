@@ -151,12 +151,14 @@ class RiskEngine:
     # before being treated as production thresholds.
 
     DEFAULT_WEIGHTS = {
-        "connectivity": 0.30,
-        "relationship_diversity": 0.20,
-        "shared_entity": 0.25,
-        "pattern_count": 0.15,
-        "graph_density": 0.10,
+        "connectivity": 0.25,
+        "relationship_diversity": 0.15,
+        "shared_entity": 0.20,
+        "accomplice_association": 0.25,
+        "pattern_count": 0.10,
+        "graph_density": 0.05,
     }
+
 
     def __init__(
         self,
@@ -301,6 +303,35 @@ class RiskEngine:
             )
         )
 
+    def _accomplice_signal(
+        self,
+        entity_type: str,
+        value: str,
+    ) -> float:
+        """
+        Calculate criminal risk signal based on direct ACCOMPLICE_OF ties.
+        """
+        if entity_type.lower() != "person":
+            return 0.0
+
+        try:
+            neighborhood = self.analytics.analyze_neighborhood(
+                entity_type=entity_type,
+                value=value,
+                depth=1,
+            )
+            relationships = neighborhood.get("relationships", [])
+            accomplice_count = sum(
+                1
+                for r in relationships
+                if str(r.get("type", "")).upper() == "ACCOMPLICE_OF"
+            )
+            # 1 accomplice = 0.50 (moderate risk), 2+ accomplices = 1.0 (high syndicate risk)
+            return min(accomplice_count * 0.50, 1.0)
+        except Exception:
+            return 0.0
+
+
         # ----------------------------------------------------
         # 4. PATTERN SIGNAL
         # ----------------------------------------------------
@@ -333,6 +364,28 @@ class RiskEngine:
                 },
             )
         )
+
+        # ----------------------------------------------------
+        # 4. ACCOMPLICE ASSOCIATION (Criminal Syndicate Risk)
+        # ----------------------------------------------------
+
+        accomplice_score = self._accomplice_signal(
+            entity_type=entity_type,
+            value=value,
+        )
+
+        signals.append(
+            self._make_signal(
+                name="accomplice_association",
+                value=accomplice_score,
+                description=(
+                    "Risk signal derived from direct co-conspirator or "
+                    "accomplice relationships."
+                ),
+                source="criminal_network_analytics",
+            )
+        )
+
 
         # ----------------------------------------------------
         # 5. GRAPH DENSITY
