@@ -23,6 +23,7 @@ from app.nlp.relation_extractor import RelationExtractor
 SAMPLE_CRIME_DOSSIER = """
 INTELLIGENCE DOSSIER: OPERATION CYBER-STORM
 Case Number: CASE-2024-8891 linked to FIR-112/2024.
+Charges Filed: Booked under IPC 420, Section 120B IPC, and IT Act Section 66D.
 
 Surveillance & Intercept Log:
 Vikram Malhotra was identified as an accomplice of Rajesh Verma in coordinating illicit transfers.
@@ -31,8 +32,10 @@ Kabir Khan works for Apex Logistics Pvt Ltd and transferred funds to Titan Holdi
 Vikram Malhotra contacted Meera Rao regarding offshore communication channels.
 Meera Rao was identified as an accomplice of Dinesh Karthik.
 Dinesh Karthik contacted Apex Logistics Pvt Ltd.
+Suspect vehicle DL 01 AB 1234 was tracked departing warehouse alongside truck MH-12-CD-5678.
 Primary intercepted telephone line: +91 98765 43210.
 """
+
 
 
 def build_criminal_network(text: str):
@@ -97,11 +100,22 @@ def print_intelligence_report(entities, edge_types, degrees):
         status = "⚠️  HIGH-DEGREE NODE" if degree >= 2 else "   Periphery"
         print(f"  {rank:<4} | {name:<27} | {degree:<3} {status}")
 
-    if degrees:
-        top_suspect, max_deg = degrees[0]
-        print(f"\n🚨 KEY FINDING: Most connected node is '{top_suspect}' with {max_deg} direct links.")
+        if degrees:
+            top_suspect, max_deg = degrees[0]
+            print(f"\n🚨 KEY FINDING: Most connected node is '{top_suspect}' with {max_deg} direct links.")
+
+    # 4. Forensic & Legal Highlights
+    penal_sections = set(entity_by_type.get("PENAL_SECTION", []))
+    vehicles = set(entity_by_type.get("VEHICLE", []))
+    if penal_sections or vehicles:
+        print("\n[+] FORENSIC & LEGAL CHARGES OVERVIEW:")
+        if penal_sections:
+            print(f"  ⚖️  Penal Sections Invoked: {', '.join(sorted(penal_sections))}")
+        if vehicles:
+            print(f"  🚗  Vehicles Identified:    {', '.join(sorted(vehicles))}")
 
     print("=" * 70 + "\n")
+
 
 
 def main():
@@ -113,3 +127,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
